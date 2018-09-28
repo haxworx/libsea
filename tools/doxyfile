@@ -1,7 +1,0 @@
-OUTPUT_DIRECTORY = ../docs
-EXTRACT_ALL = yes
-INPUT = src
-RECURSIVE = yes
-FILE_PATTERNS =
-PROJECT_NAME = libsea
-HAVE_DOT = no

@@ -1,3 +1,0 @@
-#!/bin/sh
-find src/ tests/ -name '*.c' | xargs fmt/e17-cformat.sh
-find src/ tests/ -name '*.h' | xargs fmt/e17-hformat.sh

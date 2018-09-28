@@ -1,5 +1,0 @@
-fmt/e17-strict
-find src/ tests/ -name '*.[ch]' | xargs git diff -w --ignore-blank-lines > patch.tmp
-find src/ tests/ -name '*.[ch]' | xargs git checkout -f
-patch -l -p1 < patch.tmp
-rm patch.tmp
