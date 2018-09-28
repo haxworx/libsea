@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset=utf-8>
+<link href='https://fonts.googleapis.com/css?family=Lora|PT+Mono' rel='stylesheet' type='text/css'>
+<title>Bogosys Chat</title>
+<body>
+<section id="wrapper">
+
+    <header>
+      <h1>Welcome!</h1>
+    </header>
+
+<style>
+
+#chat { width: 640px;}
+.message { font-weight: bold; }
+.message:before { content: ' '; color: #bbb; font-size: 14px; }
+#log {
+  overflow: auto;
+  max-height: 600px;
+  list-style: none;
+  padding: 0;
+}
+#log li {
+  border-top: 1px solid #ccc;
+  margin: 0;
+  padding: 10px 0;
+}
+
+#users {
+  overflow: auto;
+  width: 180px;
+  height: 600px;
+  border: 1px solid #ababab;
+  background-color: white;
+  font-size: 11px;
+  font-family: "PT Mono", "Courier New", courier, monospace;
+  color: black;
+  padding-left: 30px;
+}
+ul {
+   list-style-image: url('images/user.png');
+}
+
+input {
+  width: 640px;
+  border: 1px solid #ababab;
+  background-color: white;
+  font-size: 11px;
+  font-family: "PT Mono", "Courier New", courier, monospace;
+  color: black;
+  padding-left: 10px;
+}
+
+pre {
+  font-size: 11px;
+  font-family: "PT Mono", "Courier New", courier, monospace;
+}
+
+button {
+  font-family: Lora, sans;
+  border: 1px solid #ababab;
+  background-color: #ebebeb;
+}
+
+#log {
+  width: 640px;
+  height: 640px;
+  border: 1px solid #ababab;
+  padding-left: 10px;
+  background-color: white;
+  color: black;
+  font-size: 11px;
+  font-family: "PT Mono", "Courier New", courier, monospace;
+}
+
+body {
+  font-family: Lora, sans;
+  background: rgb(237, 237, 236);
+  width: 900px;
+  padding-left: auto;
+  padding-right: auto;
+  margin: auto;
+  font-size: 11pt;
+}
+
+section, header {
+  display: block;
+}
+
+</style>
+<article>
+<html>
+<table>
+   <tr><td><p id="status">Not connected</p></td><td>Users</td></tr>
+  <tr><td><div id="log"></div></td><td><div id="users"> </div></td></tr>
+  <tr><td colspan="2">  <form onsubmit="addMessage(); return false;">
+    <input type="text" id="chat" placeholder="type and press enter" />
+  </form>
+</td></tr>
+   <tr><td><button id="connect" onclick="Connect();">Connect</button> <button id="disconnect" onclick="Disconnect();">Disconnect</button>
+           <select id="emoji" onchange="insertEmoji(value);">
+                <option>😁</option>
+                <option>😍</option>
+                <option>😆</option>
+                <option>😘</option>
+                <option>😱</option>
+           </select>
+                                </td></tr>
+</table>
+
+</article>
+<script>
+    var connected = document.getElementById("connected");
+    var log = document.getElementById("log");
+    var chat = document.getElementById("chat");
+    var form = chat.form;
+    var state = document.getElementById("status");
+    var connect = document.getElementById("connect");
+    var disconnect = document.getElementById("disconnect");
+    var websocket = null;
+    var wsUri = "ws://127.0.0.1:12345";
+    var stats_timer = null;
+    var users = document.getElementById("users");
+
+    if (window.WebSocket === undefined)
+    {
+        state.innerHTML = "websockets not supported";
+        state.className = "fail";
+    }
+    else
+    {
+        if (typeof String.prototype.startsWith != "function")
+        {
+            String.prototype.startsWith = function (str)
+            {
+                return this.indexOf(str) == 0;
+            };
+        }
+
+        window.addEventListener("load", onLoad, false);
+    }
+
+    function onLoad()
+    {
+        disconnect.disabled = true;
+    }
+
+    function pollStats()
+    {
+       if (websocket.readyState != websocket.CLOSED)
+       {
+          websocket.send("_USERS");
+       }
+    }
+
+    function Connect()
+    {
+        websocket = new WebSocket(wsUri);
+        websocket.onopen = function(evt) { onOpen(evt) };
+        websocket.onclose = function(evt) { onClose(evt) };
+        websocket.onmessage = function(evt) { onMessage(evt) };
+        websocket.onerror = function(evt) { onError(evt) };
+    }
+
+    function Disconnect()
+    {
+       clearInterval(stats_timer);
+       websocket.send(":QUIT");
+       websocket.onclose = function() {};
+       websocket.close();
+       onClose();
+    }
+
+    function onOpen(evt)
+    {
+        users.innerHTML = "";
+        log.innerHTML = "";
+        state.className = "success";
+        state.innerHTML = "Connected to server";
+        connect.disabled = true;
+        disconnect.disabled = false;
+        tats_timer = setInterval(pollStats, 30000);
+        // 20 seconds poll of users.
+    }
+
+    function onClose(evt)
+    {
+        connect.disabled = false;
+        disconnect.disabled = true;
+        state.className = "fail";
+        state.innerHTML = "Not connected";
+        connected.innerHTML = "0";
+    }
+
+    function selectUser(id)
+    {
+        chat.value = "/MSG " + id + " ";
+        chat.focus();
+    }
+
+    function insertEmoji(icon)
+    {
+        chat.value = chat.value + icon;
+        chat.focus();
+    }
+
+    function onMessage(evt)
+    {
+        var message = evt.data;
+        if (message.startsWith("{ \"users\":"))
+          {
+             users.innerHTML = "<ul class=\"leaf\">\n";
+             var list = JSON.parse(message);
+             for (i in list.users)
+             {
+                if (list.users[i].nick.length != 0)
+                {
+                    users.innerHTML = users.innerHTML + "<li><a href=\"#\" id=\"" + list.users[i].nick + "\" onclick=\"selectUser(id);\">" + list.users[i].nick + "</a>" + "</li>\n";
+                }
+             }
+
+             users.innerHTML = users.innerHTML + "</ul>\n";
+          }
+        else
+          {
+             log.innerHTML = log.innerHTML + "<p>" + message + "</p>";
+             log.scrollTop = log.scrollHeight;
+          }
+    }
+
+    function onError(evt)
+    {
+        state.className = "fail";
+        state.innerHTML = "Communication error";
+    }
+
+    function addMessage()
+    {
+        var message = chat.value;
+
+        chat.value = "";
+        if (message.charAt(0) === "/")
+        {
+            message = ':' + message.substring(1);
+        }
+        websocket.send(message);
+    }
+
+</script>
+</section>
+</body>
+</html>
