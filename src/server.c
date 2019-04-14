@@ -749,13 +749,6 @@ _server_accept(server_t *server)
                }
 
 	     if (ret <= 0) continue;
-
-             if (SSL_accept(ssl) <= 0)
-               {
-                  SSL_free(ssl);
-                  close(sock);
-                  continue;
-               }
           }
 
         flags = fcntl(sock, F_GETFL, 0);
