@@ -697,7 +697,7 @@ void
 _server_accept(server_t *server)
 {
    struct sockaddr_in clientname;
-   int sock, flags;
+   int sock, flags, ret = -1;
    socklen_t size;
 
    do
@@ -728,6 +728,28 @@ _server_accept(server_t *server)
           {
              ssl = SSL_new(server->ctx);
              SSL_set_fd(ssl, sock);
+
+	     while (ret <= 0)
+               {
+                  ret = SSL_accept(ssl);
+                  if (ret <= 0)
+                    {
+                       int err = SSL_get_error(ssl, ret);
+                       if (err == SSL_ERROR_WANT_READ)
+                         {
+                            continue;
+                         }
+                       else
+                         {
+                            SSL_free(ssl);
+                            close(sock);
+                            break;
+                         }
+                    }
+               }
+
+	     if (ret <= 0) continue;
+
              if (SSL_accept(ssl) <= 0)
                {
                   SSL_free(ssl);
