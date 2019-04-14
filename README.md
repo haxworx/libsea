@@ -56,5 +56,5 @@ API is used internally or not stable.
 
 ### Authors
 
-The library is maintained by Alastair Roy Poole with some work from
-Sam Watkins.
+The library is written and maintained by Alastair Roy Poole with some
+work from Sam Watkins.
