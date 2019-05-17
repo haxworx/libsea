@@ -278,6 +278,19 @@ system_disks_get(void)
 
    list_free(devs);
 
+   devs = file_ls("/dev/mapper");
+   l = devs;
+   while (l)
+     {
+        name = l->data;
+        snprintf(buf, sizeof(buf), "/dev/mapper/%s", name);
+        list = list_add(list, strdup(buf));
+        l = l->next;
+     }
+
+   list_free(devs);
+
+
    list = list_sort(list, _cmp_cb);
 
    return list;
